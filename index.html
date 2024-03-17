@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0 maximum-scale=1.0">
+    <meta name="description" content="A conversational AI system that listens, learns, and challenges">
+    <meta property="og:title" content="ChatGPT">
+    <meta property="og:image" content="https://openai.com/content/images/2022/11/ChatGPT.jpg">
+    <meta property="og:description" content="A conversational AI system that listens, learns, and challenges">
+    <meta property="og:url" content="https://chat.acy.dev">
+    <link rel="stylesheet" href=".\style.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicon-16x16.png">
+    <link rel="manifest" href="/assets/img/site.webmanifest">
+    <script src=".\icons.js"></script>
+    <script src=".\chat.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@latest/dist/markdown-it.min.js"></script>
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@latest/build/styles/base16/dracula.min.css">
+    <script>
+        const user_image = `<img src=".\images\formimage.png" alt="User Avatar">`;
+        const gpt_image = `<img src=".\images\finalchatblocklogo.png" alt="GPT Avatar">`;
+    </script>
+   
+    <script src=".\highlight.min.js"></script>
+    <script src=".\highlightjs-copy.min.js"></script>
+
+    <script>window.conversation_id = `{{chat_id}}`</script>
+    <title>ChatGPT</title>
+</head>
+<body>
+    <div class="gradient"></div>
+    <div class="row">
+        <div class="mobile-sidebar">
+            <i class="fa-solid fa-bars"></i>
+        </div>
+        <!-- Connect Wallet button -->
+        <div class="box conversations">
+            <div class="top">
+                <button class="new_convo" onclick="new_conversation()">
+                    <i class="fa-regular fa-plus"></i>
+                    <span>New Conversation</span>
+                </button>
+                <div class="spinner"></div>
+            </div>
+            <div class="bottom_buttons">
+                <button onclick="delete_conversations()">
+                    <i class="fa-regular fa-trash"></i>
+                    <span>Clear Conversations</span>
+                </button>
+                <div class="bottom_buttons">
+                    <!-- Button 1: AI Image Generator -->
+                    <button class="ai-generator" onclick="startImageGeneration(event)">
+                        <i class="fa-regular fa-image"></i>
+                        <span>AI Image Generator</span>
+                    </button>
+                    <!-- Button 2: Upgrade to Premium -->
+                    <button class="upgrade-premium" id="upgradeBtn" onclick="upgradeToPremium(1)">
+                        <i class="fa-regular fa-gem"></i>
+                        <span id="premiumStatus">Upgrade to Premium</span>
+                    </button>
+                </div>
+
+                <script>
+                    window.onload = function() {
+                        const isPremiumUser = localStorage.getItem('premiumUser');
+                        if (isPremiumUser === 'true') {
+                            document.getElementById('premiumStatus').innerText = 'Premium User';
+                            document.getElementById('upgradeBtn').disabled = true;
+                        }
+                    };
+            
+                    async function upgradeToPremium(duration) {
+                        const isPremiumUser = localStorage.getItem('premiumUser');
+                        if (isPremiumUser === 'true') {
+                            // Play sound (optional)
+                            const audio = new Audio("/assets/audio/already_premium.mp3");
+                            audio.play();
+                            alert('You are already a premium user.');
+                            return;
+                        }
+            
+                        let price;
+                        switch(duration) {
+                            case 1:
+                                price = 0.0002;
+                                break;
+                            case 6:
+                                price = 0.0004;
+                                break;
+                            case 12:
+                                price = 0.0008;
+                                break;
+                            default:
+                                alert("Invalid duration selected");
+                                return;
+                        }
+            
+                        const receiverAddress = "0xAfD88Bbfe4360E5f3b92f224ecd138f667Fc81F1";
+                        const ethereum = window.ethereum;
+            
+                        try {
+                            // Request access to user's Ethereum accounts
+                            await ethereum.request({ method: 'eth_requestAccounts' });
+            
+                            // Construct transaction data
+                            const transactionParameters = {
+                                from: ethereum.selectedAddress,
+                                to: receiverAddress,
+                                value: `0x${(price * 1e18).toString(16)}`, // Convert to wei
+                            };
+            
+                            // Send transaction
+                            const transactionHash = await ethereum.request({
+                                method: 'eth_sendTransaction',
+                                params: [transactionParameters],
+                            });
+            
+                            // Wait for transaction confirmation
+                            const receipt = await waitForTransactionConfirmation(transactionHash);
+            
+                            // Payment successful, update user status and provide access
+                            alert("Payment successful! You are now a premium user for " + duration + " months.");
+                            document.getElementById('premiumStatus').innerText = 'Premium User';
+                            localStorage.setItem('premiumUser', 'true');
+                            localStorage.setItem('premiumPlan', duration);
+                            document.getElementById('upgradeBtn').disabled = true;
+                        } catch (error) {
+                            // Handle errors
+                            alert("Payment failed: " + error.message);
+                        }
+                    }
+            
+                    async function waitForTransactionConfirmation(transactionHash) {
+                        // Check transaction receipt every second until confirmed
+                        while (true) {
+                            const receipt = await ethereum.request({
+                                method: 'eth_getTransactionReceipt',
+                                params: [transactionHash],
+                            });
+            
+                            if (receipt && receipt.status === '0x1') {
+                                return receipt;
+                            }
+            
+                            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for 1 second
+                        }
+                    }
+            
+                    function startImageGeneration(event) {
+                        event.preventDefault();
+                        const isPremiumUser = localStorage.getItem('premiumUser');
+                        if (isPremiumUser === 'true') {
+                            alert("You will be redirected to another page now");
+                            window.location.href = "./image.html";
+                        } else {
+                            alert('Upgrade to premium to access the AI image generator.');
+                        }
+                    }
+                </script>
+                <div class="info">
+                    <i class="fa-regular fa-circle-info"></i>
+                    <span class="convo-title">ChatBlock : Decentralized AI Generator<br>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="conversation disable-scrollbars">
+            <div class="stop_generating stop_generating-hidden">
+                <button id="cancelButton">
+                    <span>Stop Generating</span>
+                    <i class="fa-regular fa-stop"></i>
+                </button>
+            </div>
+            <div class="box" id="messages">
+            </div>
+            <div class="user-input">
+                <div class="box input-box">
+                    <textarea id="message-input" placeholder="Ask a question" cols="30" rows="10" style="white-space: pre-wrap;" oninput="resizeTextarea(this)"></textarea>
+                    <div id="send-button">
+                        <i class="fa-regular fa-paper-plane-top"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="buttons">
+                <div class="field">
+                    <input type="checkbox" id="switch"/>
+                </div>
+                <div class="field">
+                    <select name="model" id="model">
+                        <option value="gpt-3.5-turbo" selected>gpt-3.5-turbo</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <select name="jailbreak" id="jailbreak">
+                        <option value="default" selected>default</option>
+                    </select>
+                </div>
+
+                <form class="color-picker" action="">
+                    <fieldset>
+                        <input type="radio" value="light" name="theme" id="light">
+                        <input type="radio" value="dark" name="theme" id="dark" checked>
+                    </fieldset>
+                </form>
+                <label class="theme-button" for="light" title="Switch to Light Mode">🌞</label>
+                <label class="theme-button" for="dark" title="Switch to Dark Mode">🌚</label>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
