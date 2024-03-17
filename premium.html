@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Upgrade Feature</title>
+<style>
+    /* CSS styles */
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f4f4f4;
+    }
+
+    .container {
+        text-align: center;
+    }
+
+    button {
+        padding: 10px 20px;
+        margin-top: 20px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Upgrade to Premium</h1>
+    <p>Pay 0.001 ETH to access the AI image generator.</p>
+    <button id="upgradeBtn">Upgrade Now</button>
+</div>
+
+<script>
+    // JavaScript code
+    document.addEventListener('DOMContentLoaded', function() {
+        const userStatus = localStorage.getItem('userStatus');
+        if (userStatus === 'premium') {
+            // User has already upgraded
+            window.location.href = 'image.html'; // Redirect to image.html
+        }
+    });
+
+    document.getElementById('upgradeBtn').addEventListener('click', async function() {
+        try {
+            // Request account access if needed
+            await window.ethereum.enable();
+            // Get Web3 provider
+            const provider = window['ethereum'];
+            // Create new Web3 instance
+            const web3 = new Web3(provider);
+            // Get user's Ethereum address
+            const accounts = await web3.eth.getAccounts();
+            const userAddress = accounts[0];
+            // Send transaction
+            const tx = await web3.eth.sendTransaction({
+                to: '0xd9f212F907562Cbf57f2B684d030422A2094A1e9', // Replace with the recipient address
+                from: userAddress,
+                value: web3.utils.toWei('0.001', 'ether')
+            });
+            // Log transaction details
+            console.log('Transaction hash:', tx.transactionHash);
+            console.log('Transaction receipt:', tx);
+            // Update user status to premium
+            localStorage.setItem('userStatus', 'premium');
+            // Redirect to image.html
+            window.location.href = 'C:\Users\itsap\OneDrive\Documents\ChatBlock\Final--ChatBlock\chatgpt-clone-main\client\html\image.html';
+        } catch (error) {
+            // Handle errors
+            console.error('Transaction error:', error);
+            alert('Transaction failed. Please try again.');
+        }
+    });
+</script>
+
+<!-- Include Web3.js library -->
+<script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js"></script>
+
+</body>
+</html>
