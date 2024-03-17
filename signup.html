@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signup with Metamask</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-r from-blue-500 to-purple-500 flex justify-center items-center h-screen">
+    <div class="max-w-md w-full bg-white p-8 rounded-lg shadow-lg">
+        <h2 class="text-3xl font-semibold mb-4 text-center text-gray-800">Welcome to ChatBlock</h2>
+        <p class="text-lg mb-6 text-center text-gray-600">Blockchain based AI Generator</p>
+        
+        <!-- Signup Form -->
+        <form id="signupForm">
+            <div class="mb-4">
+                <input type="text" id="signupUsername" placeholder="Username" class="border rounded px-3 py-2 w-full">
+            </div>
+            <div class="mb-4">
+                <input type="password" id="signupPassword" placeholder="Password (min 8 characters)" class="border rounded px-3 py-2 w-full">
+            </div>
+            <div class="mb-4">
+                <input type="text" id="metamaskAddress" placeholder="Metamask Address" class="border rounded px-3 py-2 w-full" readonly>
+            </div>
+            <button id="connectWalletBtn" type="button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full w-full mb-4">
+                Connect Wallet with Metamask
+            </button>
+            <button id="signupBtn" type="button" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full w-full mb-4">
+                Sign Up
+            </button>
+            <p class="text-sm text-gray-600 text-center">Already have an account? <a href="#" id="showLoginForm" class="text-blue-500">Login here</a>.</p>
+            <p id="signupMessage" class="text-sm text-red-600 hidden"></p>
+        </form>
+
+        <!-- Login Form (Initially Hidden) -->
+        <form id="loginForm" class="hidden">
+            <div class="mb-4">
+                <input type="text" id="loginUsername" placeholder="Username" class="border rounded px-3 py-2 w-full">
+            </div>
+            <div class="mb-4">
+                <input type="password" id="loginPassword" placeholder="Password" class="border rounded px-3 py-2 w-full">
+            </div>
+            <button id="loginBtn" type="button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full w-full mb-4">
+                Login
+            </button>
+            <p id="loginMessage" class="text-sm text-red-600 hidden"></p>
+        </form>
+
+    </div>
+
+    <script>
+        // Connect Wallet Button Click Event
+        document.getElementById('connectWalletBtn').addEventListener('click', async () => {
+            try {
+                if (typeof window.ethereum === 'undefined') {
+                    throw new Error('Metamask extension not installed');
+                }
+
+                // Request Metamask connection
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+                // Metamask is now connected
+                const metamaskAddressInput = document.getElementById('metamaskAddress');
+                metamaskAddressInput.value = accounts[0];
+                metamaskAddressInput.setAttribute('readonly', true);
+            } catch (error) {
+                console.error('Metamask connection error:', error);
+                alert(error.message);
+            }
+        });
+
+        // Signup Button Click Event
+        document.getElementById('signupBtn').addEventListener('click', async () => {
+            const username = document.getElementById('signupUsername').value;
+            const password = document.getElementById('signupPassword').value;
+            const metamaskId = document.getElementById('metamaskAddress').value;
+
+            if (!username || !password || !metamaskId) {
+                document.getElementById('signupMessage').innerText = 'Please fill in all fields.';
+                document.getElementById('signupMessage').classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:5502/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password, metamaskId })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Signup failed');
+                }
+
+                window.location.href = `http://127.0.0.1:1338/chat/?username=${username}`;
+            } catch (error) {
+                console.error('Signup error:', error);
+                document.getElementById('signupMessage').innerText = 'Signup failed. Please try again later.';
+                document.getElementById('signupMessage').classList.remove('hidden');
+            }
+        });
+
+        // Show Login Form when "Login here" link is clicked
+        document.getElementById('showLoginForm').addEventListener('click', () => {
+            document.getElementById('signupForm').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+        });
+
+        // Login Button Click Event
+        document.getElementById('loginBtn').addEventListener('click', async () => {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if (!username || !password) {
+                document.getElementById('loginMessage').innerText = 'Please fill in all fields.';
+                document.getElementById('loginMessage').classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:5502/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (response.ok) {
+                    window.location.href = `http://127.0.0.1:1338/chat/?username=${username}`;
+                } else {
+                    const data = await response.json();
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                document.getElementById('loginMessage').innerText = error.message;
+                document.getElementById('loginMessage').classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
